@@ -1,25 +1,24 @@
 const express = require("express"); //Import the express dependency
 const app = express(); //Instantiate an express app, the main work horse of this server
-const port = 5000; //Save the port number where your server will be listening
+const port = 5000;
 const AdmZip = require("adm-zip");
 const fs = require("fs");
 const path = require("path");
+// c2e menifesto sample  file
 const smaple = require("./sample.js");
-const { json } = require("express");
-const zipFile = "example.zip";
+// upload any zip file here, copy in root and change name here
+const zipFile = "curriki-project-5.zip";
 const outputFolder = "example_output";
-//Idiomatic expression in express to route and respond to a client request
 app.get("/", (req, res) => {
   //get requests to the root ("/") will route here
   // res.sendFile("index.html", { root: __dirname }); //server responds by sending the index.html file to the client's browser
-  //the .sendFile method needs the absolute path to the file, see: https://expressjs.com/en/4x/api.html#res.sendFile
-  console.log(smaple);
-  // Extract the zip file
   fs.rmSync(outputFolder, { recursive: true, force: true });
+  //read the zip file
   const zipper = new AdmZip(zipFile);
+  // extract zip file
   zipper.extractAllTo(outputFolder, true);
 
-  // Write the directory paths to a text file in each directory
+  // Write the c2e file path in each directory
   function writeDirectoryPaths(dir, file) {
     const directoryPaths = [];
     const filePathsh5p = [];
@@ -34,38 +33,35 @@ app.get("/", (req, res) => {
         filePathsh5p.push(filePath);
       }
     });
-
+    // write submesnifest path for each c2e json
     var manifestCouple = directoryPaths.map((data) => {
       return {
         "@id": "c2ens:c2eid-xxx-2",
         "@type": "C2E",
         "@index": "2",
-        name: "project name",
+        name: data.split("/")[data.split("/").length - 1],
         c2eType: "H5P",
         subManifest: data.replace("example_output/", "") + "/c2e.json",
       };
     });
+    // write resource path and folder name
     var resourceCouple = filePathsh5p.map((data) => {
-      // if (!data.includes("c2e.json")) {
       return {
         "@id": "c2ens:c2eid-xxx/resource/1",
         "@type": "sdons:DigitalDocument",
         url: data.split("/")[data.split("/").length - 1],
         fileFormat: data.split(".")?.[1],
       };
-      // }
     });
     resourceCouple = [
       ...resourceCouple,
       ...directoryPaths.map((data) => {
-        // if (!data.includes("c2e.json")) {
         return {
           "@id": "c2ens:c2eid-xxx/resource/1",
           "@type": "sdons:DigitalDocument",
           url: data.split("/")[data.split("/").length - 1],
           fileFormat: data.split(".")?.[1] || "directory",
         };
-        // }
       }),
     ];
     if (directoryPaths.length > 0) {
@@ -82,17 +78,7 @@ app.get("/", (req, res) => {
             {
               "@id": "c2eTerm:c2eComponents",
               "@type": "sdons:Collection",
-              c2eComponents: [
-                {
-                  "@id": "c2ens:c2eid-xxx-1",
-                  "@type": "C2E",
-                  "@index": "1",
-                  name: "Sample Activity Content 1",
-                  c2eType: "H5P",
-                  c2eResources: [],
-                },
-                ...manifestCouple,
-              ],
+              c2eComponents: [...manifestCouple],
             },
           ],
         })
@@ -112,16 +98,7 @@ app.get("/", (req, res) => {
             {
               "@id": "c2eTerm:c2eComponents",
               "@type": "sdons:Collection",
-              c2eComponents: [
-                {
-                  "@id": "c2ens:c2eid-xxx-1",
-                  "@type": "C2E",
-                  "@index": "1",
-                  name: "Sample Activity Content 1",
-                  c2eType: "H5P",
-                  c2eResources: [],
-                },
-              ],
+              c2eComponents: [],
             },
           ],
         })
@@ -131,17 +108,16 @@ app.get("/", (req, res) => {
   writeDirectoryPaths(outputFolder, path.join(outputFolder, "c2e.json"));
 
   // Create the updated zip file
-  const outputZip = "updated_example.zip";
+  const outputZip = "c2e-project.zip";
   const zip = new AdmZip();
   zip.addLocalFolder(outputFolder, "");
   zip.writeZip(outputZip);
   const data = zip.toBuffer();
+  // downlaod c2e zip project
   res.set("Content-Type", "application/octet-stream");
   res.set("Content-Disposition", `attachment; filename=${outputZip}`);
   res.set("Content-Length", data.length);
   res.send(data);
-  // Download the updated zip file
-  // ... (you'll need to implement this part yourself)
 });
 
 app.listen(port, () => {

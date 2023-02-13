@@ -111,16 +111,7 @@ module.exports = {
     {
       "@id": "c2eTerm:c2eComponents",
       "@type": "sdons:Collection",
-      c2eComponents: [
-        {
-          "@id": "c2ens:c2eid-xxx-1",
-          "@type": "C2E",
-          "@index": "1",
-          name: "Sample Activity Content 1",
-          c2eType: "H5P",
-          c2eResources: [],
-        },
-      ],
+      c2eComponents: [],
     },
   ],
 };
