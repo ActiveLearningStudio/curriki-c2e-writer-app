@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
 
       if (fs.statSync(filePath).isDirectory()) {
         directoryPaths.push(filePath);
-
+        // recursive function
         writeDirectoryPaths(filePath, path.join(filePath, "c2e.json"));
       } else {
         filePathsh5p.push(filePath);
@@ -105,6 +105,7 @@ app.get("/", (req, res) => {
       );
     }
   }
+
   writeDirectoryPaths(outputFolder, path.join(outputFolder, "c2e.json"));
 
   // Create the updated zip file
