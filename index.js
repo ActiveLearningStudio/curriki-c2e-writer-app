@@ -4,17 +4,54 @@ const port = 5000;
 const AdmZip = require("adm-zip");
 const fs = require("fs");
 const path = require("path");
-// c2e menifesto sample  file
-const smaple = require("./sample.js");
-// upload any zip file here, copy in root and change name here
-const zipFile = "curriki-project-5.zip";
+const sample = require("./sample.js");
+const fileUpload = require("express-fileupload");
+var cors = require("cors");
+const corsOpts = {
+  origin: '*',
+
+  methods: [
+    'GET',
+    'POST',
+  ],
+
+  allowedHeaders: [
+    'Content-Type',
+  ],
+};
+app.use(cors(corsOpts));
+
+app.use(fileUpload({
+    limits: {
+        fileSize: 5 * 2024 * 1024 * 1024 //10gb
+    },
+    abortOnLimit: true
+ }));
+
 const outputFolder = "example_output";
-app.get("/", (req, res) => {
-  //get requests to the root ("/") will route here
+
+app.post("/upload", (req, res) => {
   // res.sendFile("index.html", { root: __dirname }); //server responds by sending the index.html file to the client's browser
-  fs.rmSync(outputFolder, { recursive: true, force: true });
+  fs.rmSync(outputFolder	, { recursive: true, force: true });
+  
+  // Uploaded path
+  const uploadedFile = req.files.uploadFile;
+  
+  // Upload path
+  const uploadPath = __dirname + "/uploads/" + uploadedFile.name;
+  
+  //Output File Name with .c2e extention
+  const outputZip=uploadedFile.name.substring(0, uploadedFile.name.length-4)+'.c2e';
+  
+  // To save the file using mv() function
+  uploadedFile.mv(uploadPath, function (err) {
+	if (err) {
+		console.log(err);
+		res.send("Failed !!");
+    } 
   //read the zip file
-  const zipper = new AdmZip(zipFile);
+  const zipper = new AdmZip(uploadPath);
+  
   // extract zip file
   zipper.extractAllTo(outputFolder, true);
 
@@ -68,7 +105,7 @@ app.get("/", (req, res) => {
       fs.writeFileSync(
         file,
         JSON.stringify({
-          ...smaple,
+          ...sample,
           c2eContain: [
             {
               "@id": "c2eTerm:c2eResources",
@@ -88,7 +125,7 @@ app.get("/", (req, res) => {
       fs.writeFileSync(
         file,
         JSON.stringify({
-          ...smaple,
+          ...sample,
           c2eContain: [
             {
               "@id": "c2eTerm:c2eResources",
@@ -109,17 +146,20 @@ app.get("/", (req, res) => {
   writeDirectoryPaths(outputFolder, path.join(outputFolder, "c2e.json"));
 
   // Create the updated zip file
-  const outputZip = "c2e-project.zip";
   const zip = new AdmZip();
   zip.addLocalFolder(outputFolder, "");
   zip.writeZip(outputZip);
   const data = zip.toBuffer();
+  
   // downlaod c2e zip project
   res.set("Content-Type", "application/octet-stream");
   res.set("Content-Disposition", `attachment; filename=${outputZip}`);
   res.set("Content-Length", data.length);
   res.send(data);
+  });
 });
+
+
 
 app.listen(port, () => {
   //server starts listening for any attempts from a client to connect at port: {port}
